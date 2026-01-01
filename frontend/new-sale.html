@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Sale</title>
+    <style>
+        #medicineBox {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🧾 New Sale Bill</h2>
+
+<input type="text" id="search" placeholder="Medicine name"
+       oninput="medicineSelected=false; filterMedicines()">
+<br>
+
+<div id="medicineBox" style="display:none;">
+    <select id="medicine" size="5" style="width:300px"
+            onchange="setSearchFromSelection()"></select>
+</div>
+<br>
+
+<input type="number" id="qty" placeholder="Quantity"><br><br>
+<input type="number" id="price" placeholder="Price per unit"><br><br>
+
+<button onclick="sell()">Sell</button>
+
+<p id="msg"></p>
+
+<script>
+let medicines = [];
+let medicineSelected = false;
+
+fetch("http://localhost:8080/api/medicine/all")
+.then(res => res.json())
+.then(data => {
+    medicines = data;
+    renderOptions(data);
+});
+
+function renderOptions(data) {
+    const sel = document.getElementById("medicine");
+    sel.innerHTML = "";
+
+    data.forEach(m => {
+        sel.innerHTML += `
+            <option value="${m.id}">
+                ${m.name} | Stock: ${m.quantity}
+            </option>
+        `;
+    });
+}
+
+/* ✅ show dropdown only when cursor in search */
+function showDropdown() {
+    document.getElementById("medicineBox").style.display = "block";
+}
+
+function filterMedicines() {
+    if (medicineSelected) return; // ✅ stop reopening dropdown
+
+    const value = document.getElementById("search").value.toLowerCase();
+
+    const filtered = medicines.filter(m =>
+        m.name.toLowerCase().includes(value)
+    );
+
+    if (filtered.length === 0) {
+        document.getElementById("medicineBox").style.display = "none";
+        return;
+    }
+
+    renderOptions(filtered);
+    document.getElementById("medicineBox").style.display = "block";
+}
+
+
+/* ✅ hide dropdown after selection */
+function setSearchFromSelection() {
+    const sel = document.getElementById("medicine");
+    if (sel.selectedIndex === -1) return;
+
+    const selectedText = sel.options[sel.selectedIndex].text;
+    const medicineName = selectedText.split("|")[0].trim();
+
+    document.getElementById("search").value = medicineName;
+
+    medicineSelected = true; // ✅ LOCK selection
+
+    // ✅ hide dropdown completely
+    document.getElementById("medicineBox").style.display = "none";
+
+    // ✅ cursor stays in search box
+    document.getElementById("search").focus();
+}
+
+
+function sell() {
+    const id = document.getElementById("medicine").value;
+    const qty = document.getElementById("qty").value;
+    const price = document.getElementById("price").value;
+
+    fetch(`http://localhost:8080/api/billing/sell?medicineId=${id}&quantity=${qty}&price=${price}`, {
+        method: "POST"
+    })
+    .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+    })
+    .then(() => {
+        document.getElementById("msg").innerHTML = "✅ Sale completed";
+    })
+    .catch(() => {
+        document.getElementById("msg").innerHTML = "❌ Sale failed";
+    });
+}
+</script>
+
+
+</body>
+</html>
