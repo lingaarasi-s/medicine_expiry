@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medicines Expiring Soon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h2 {
+            color: #333;
+        }
+        .medicine-item {
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #dc3545;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .medicine-item strong {
+            color: #333;
+        }
+        .expiry-date {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        a:hover {
+            background-color: #5a6268;
+        }
+        #list {
+            margin: 20px 0;
+        }
+        .loading {
+            color: #666;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h2>Medicines Expiring Soon</h2>
+    <div id="list" class="loading">Loading...</div>
+    <a href="index.html">Back to Dashboard</a>
+    
+    <script>
+        fetch("http://localhost:8080/api/medicine/expire-soon")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Failed to fetch medicines");
+                }
+                return response.json();
+            })
+            .then(data => {
+                const list = document.getElementById("list");
+                list.innerHTML = "";
+                
+                if (data.length === 0) {
+                    list.innerHTML = "<p>No medicines expiring soon.</p>";
+                } else {
+                    data.forEach(medicine => {
+                        const item = document.createElement("div");
+                        item.className = "medicine-item";
+                        item.innerHTML = `
+                            <strong>${medicine.name}</strong> (Batch: ${medicine.batchNo})<br>
+                            Expiry Date: <span class="expiry-date">${medicine.expiryDate}</span><br>
+                            Quantity: ${medicine.quantity} | Manufacturer: ${medicine.manufacturer}
+                        `;
+                        list.appendChild(item);
+                    });
+                }
+            })
+            .catch(error => {
+                const list = document.getElementById("list");
+                list.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                console.error("Error:", error);
+            });
+    </script>
+</body>
+</html>

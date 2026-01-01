@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales History</title>
+</head>
+<body>
+
+<h2>📊 Sales History</h2>
+
+<table border="1">
+<tr>
+    <th>Medicine</th>
+    <th>Batch</th>
+    <th>Qty</th>
+    <th>Total</th>
+    <th>Date</th>
+</tr>
+<tbody id="list"></tbody>
+</table>
+
+<script>
+fetch("http://localhost:8080/api/billing/history")
+.then(res => res.json())
+.then(data => {
+    const t = document.getElementById("list");
+    data.forEach(s => {
+        t.innerHTML += `
+        <tr>
+            <td>${s.medicineName}</td>
+            <td>${s.batchNo}</td>
+            <td>${s.quantity}</td>
+            <td>₹${s.totalAmount}</td>
+            <td>${s.saleDate}</td>
+        </tr>`;
+    });
+});
+</script>
+
+</body>
+</html>

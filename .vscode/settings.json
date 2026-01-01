@@ -1,0 +1,4 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "gradle.javaDebug.cleanOutput": true
+}

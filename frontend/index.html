@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pharmacy Dashboard</title>
+    <style>
+        body { font-family: Arial; background:#f5f5f5; margin:20px; }
+        table { width:100%; border-collapse: collapse; background:white; }
+        th, td { border:1px solid #ddd; padding:10px; text-align:center; }
+        th { background:#007bff; color:white; }
+        input { padding:8px; width:300px; margin-bottom:10px; }
+        a { padding:8px 15px; background:#28a745; color:white; text-decoration:none; border-radius:4px; }
+    </style>
+</head>
+<body>
+
+<h2>Medicine Expiry Management System</h2>
+
+<a href="add.html">➕ Add Medicine</a>
+<a href="expire.html" style="background:#dc7d35">⏰ Expire Soon</a>
+<a href="#" onclick="loadLowStock()" style="background:#f7ff07;color:black">
+    ⚠️ Low Stock
+</a>
+<a href="remove.html" style="background:#dc3535">
+    ❌ Medicines to Remove
+</a>
+<a href="billing.html" style="background:#17a2b8">🧾 Billing</a>
+<a href="sales.html" style="background:#6f42c1">📊 Sales History</a>
+
+
+
+<br><br>
+
+<input type="text" id="search" placeholder="Search by Barcode or Batch No" onkeyup="searchMedicine()">
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Batch No</th>
+            <th>Barcode</th>
+            <th>Expiry Date</th>
+            <th>Quantity</th>
+            <th>Manufacturer</th>
+        </tr>
+    </thead>
+    <tbody id="medicineTable"></tbody>
+</table>
+
+<script>
+let medicines = [];
+
+// Load all medicines initially
+loadAll();
+
+function loadAll() {
+    fetch("http://localhost:8080/api/medicine/all")
+        .then(res => res.json())
+        .then(data => {
+            medicines = data;
+            renderTable(data);
+        });
+}
+
+// Load low stock medicines
+function loadLowStock() {
+    fetch("http://localhost:8080/api/medicine/low-stock")
+        .then(res => res.json())
+        .then(data => {
+            renderTable(data);
+        });
+}
+
+function renderTable(data) {
+    const table = document.getElementById("medicineTable");
+    table.innerHTML = "";
+
+    if (data.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="6" style="color:red;font-weight:bold">
+                    No medicines found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    data.forEach(m => {
+        table.innerHTML += `
+            <tr ${m.quantity < 100 ? 'style="background:#fff3cd"' : ''}>
+                <td>${m.name}</td>
+                <td>${m.batchNo}</td>
+                <td>${m.barcode}</td>
+                <td>${m.expiryDate}</td>
+                <td><b>${m.quantity}</b></td>
+                <td>${m.manufacturer}</td>
+            </tr>
+        `;
+    });
+}
+
+function searchMedicine() {
+    const value = document.getElementById("search").value.toLowerCase();
+
+    const filtered = medicines.filter(m => {
+        const barcode = m.barcode ? m.barcode.toLowerCase() : "";
+        const batchNo = m.batchNo ? m.batchNo.toLowerCase() : "";
+        const name = m.name ? m.name.toLowerCase() : "";
+
+        return (
+            barcode.includes(value) ||
+            batchNo.includes(value) ||
+            name.includes(value)
+        );
+    });
+
+    renderTable(filtered);
+}
+
+</script>
+
+
+</body>
+</html>

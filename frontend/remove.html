@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Medicines to be Removed</title>
+    <style>
+        body { font-family: Arial; margin:20px; background:#f5f5f5; }
+        .card {
+            background:white;
+            padding:15px;
+            margin-bottom:10px;
+            border-left:5px solid red;
+        }
+        button {
+            background:red;
+            color:white;
+            border:none;
+            padding:6px 12px;
+            cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h2>❌ Expired Medicines (To Be Removed)</h2>
+
+<div id="list">Loading...</div>
+
+<a href="index.html">⬅ Back</a>
+
+<script>
+fetch("http://localhost:8080/api/medicine/expired")
+.then(res => res.json())
+.then(data => {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    if (data.length === 0) {
+        list.innerHTML = "<p>No expired medicines</p>";
+        return;
+    }
+
+    data.forEach(m => {
+        list.innerHTML += `
+            <div class="card">
+                <b>${m.name}</b><br>
+                Batch: ${m.batchNo}<br>
+                Expired On: ${m.expiryDate}<br>
+                <button onclick="deleteMed(${m.id})">Delete</button>
+            </div>
+        `;
+    });
+});
+
+function deleteMed(id) {
+    if (!confirm("Delete this medicine?")) return;
+
+    fetch(`http://localhost:8080/api/medicine/delete/${id}`, {
+        method: "DELETE"
+    })
+    .then(() => location.reload());
+}
+</script>
+
+</body>
+</html>
