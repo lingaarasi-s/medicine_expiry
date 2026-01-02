@@ -3,43 +3,62 @@
 <head>
     <title>New Sale</title>
     <style>
-        #medicineBox {
-            margin-bottom: 15px;
-        }
+        #medicineBox { margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <h2>🧾 New Sale Bill</h2>
 
+<!-- 🔍 Search -->
 <input type="text" id="search" placeholder="Medicine name"
        oninput="medicineSelected=false; filterMedicines()">
-<br>
+<br><br>
 
+<!-- 🔽 Medicine Dropdown -->
 <div id="medicineBox" style="display:none;">
     <select id="medicine" size="5" style="width:300px"
             onchange="setSearchFromSelection()"></select>
 </div>
-<br>
 
+<!-- 📦 Quantity & Price -->
 <input type="number" id="qty" placeholder="Quantity"><br><br>
 <input type="number" id="price" placeholder="Price per unit"><br><br>
 
-<button onclick="sell()">Sell</button>
+<!-- 🛒 CART BUTTONS -->
+<button onclick="addToCart()">➕ Add Item</button>
+<button onclick="submitBill()">🧾 Generate Bill</button>
 
 <p id="msg"></p>
 
+<hr>
+
+<h3>🛒 Current Bill Items</h3>
+<ul id="cartList"></ul>
+
+<button onclick="goDashboard()">🏠 Dashboard</button>
+
 <script>
+
+    function goDashboard() {
+    window.location.href = "index.html";
+}
+/* ==========================
+   LOAD MEDICINES
+========================== */
 let medicines = [];
 let medicineSelected = false;
+let cart = [];
 
 fetch("http://localhost:8080/api/medicine/all")
 .then(res => res.json())
 .then(data => {
     medicines = data;
-    renderOptions(data);
 });
 
+/* ==========================
+   DROPDOWN LOGIC
+========================== */
 function renderOptions(data) {
     const sel = document.getElementById("medicine");
     sel.innerHTML = "";
@@ -53,15 +72,13 @@ function renderOptions(data) {
     });
 }
 
-/* ✅ show dropdown only when cursor in search */
-function showDropdown() {
-    document.getElementById("medicineBox").style.display = "block";
-}
-
 function filterMedicines() {
-    if (medicineSelected) return; // ✅ stop reopening dropdown
-
     const value = document.getElementById("search").value.toLowerCase();
+
+    if (!value) {
+        document.getElementById("medicineBox").style.display = "none";
+        return;
+    }
 
     const filtered = medicines.filter(m =>
         m.name.toLowerCase().includes(value)
@@ -76,48 +93,75 @@ function filterMedicines() {
     document.getElementById("medicineBox").style.display = "block";
 }
 
-
-/* ✅ hide dropdown after selection */
 function setSearchFromSelection() {
     const sel = document.getElementById("medicine");
-    if (sel.selectedIndex === -1) return;
+    const text = sel.options[sel.selectedIndex].text;
+    const name = text.split("|")[0].trim();
 
-    const selectedText = sel.options[sel.selectedIndex].text;
-    const medicineName = selectedText.split("|")[0].trim();
-
-    document.getElementById("search").value = medicineName;
-
-    medicineSelected = true; // ✅ LOCK selection
-
-    // ✅ hide dropdown completely
+    document.getElementById("search").value = name;
     document.getElementById("medicineBox").style.display = "none";
-
-    // ✅ cursor stays in search box
-    document.getElementById("search").focus();
 }
 
-
-function sell() {
+/* ==========================
+   🛒 CART LOGIC (YOUR CODE)
+========================== */
+function addToCart() {
     const id = document.getElementById("medicine").value;
-    const qty = document.getElementById("qty").value;
-    const price = document.getElementById("price").value;
+    const name = document.getElementById("search").value;
+    const qty = parseInt(document.getElementById("qty").value);
+    const price = parseFloat(document.getElementById("price").value);
 
-    fetch(`http://localhost:8080/api/billing/sell?medicineId=${id}&quantity=${qty}&price=${price}`, {
-        method: "POST"
+    if (!id || qty <= 0 || price <= 0) {
+        alert("Select medicine, quantity & price");
+        return;
+    }
+
+    cart.push({
+        medicineId: id,
+        quantity: qty,
+        price: price
+    });
+
+    // show in UI
+    const li = document.createElement("li");
+    li.innerText = `${name} | Qty: ${qty} | ₹${price}`;
+    document.getElementById("cartList").appendChild(li);
+
+    document.getElementById("msg").innerHTML =
+        `🛒 ${name} added to bill`;
+
+    // reset fields
+    document.getElementById("medicine").value = "";
+    document.getElementById("search").value = "";
+    document.getElementById("qty").value = "";
+    document.getElementById("price").value = "";
+}
+
+/* ==========================
+   🧾 SUBMIT BILL
+========================== */
+function submitBill() {
+    fetch("http://localhost:8080/api/billing/sell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cart)
     })
-    .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-    })
-    .then(() => {
-        document.getElementById("msg").innerHTML = "✅ Sale completed";
-    })
-    .catch(() => {
-        document.getElementById("msg").innerHTML = "❌ Sale failed";
+    .then(res => res.json())
+    .then(bill => {
+        document.getElementById("msg").innerHTML =
+            `✅ Bill ${bill.billNo} generated`;
+
+        cart = [];
+
+        // 🔁 AUTO REDIRECT TO SALES HISTORY
+        setTimeout(() => {
+            window.location.href = "sales.html";
+        }, 1000); // 1 second delay (optional)
     });
 }
-</script>
 
+
+</script>
 
 </body>
 </html>

@@ -7,8 +7,16 @@
 
 <h2>📊 Sales History</h2>
 
+<!-- ACTION BUTTONS -->
+<button onclick="goDashboard()">🏠 Dashboard</button>
+<button onclick="newSale()">➕ New Sale</button>
+
+<br><br>
+
+
 <table border="1">
 <tr>
+    <th>Bill No</th>
     <th>Medicine</th>
     <th>Batch</th>
     <th>Qty</th>
@@ -19,22 +27,61 @@
 </table>
 
 <script>
+
+function goDashboard() {
+    window.location.href = "index.html";
+}
+
+function newSale() {
+    window.location.href = "new-sale.html";
+}
+
 fetch("http://localhost:8080/api/billing/history")
 .then(res => res.json())
 .then(data => {
-    const t = document.getElementById("list");
-    data.forEach(s => {
-        t.innerHTML += `
-        <tr>
-            <td>${s.medicineName}</td>
-            <td>${s.batchNo}</td>
-            <td>${s.quantity}</td>
-            <td>₹${s.totalAmount}</td>
-            <td>${s.saleDate}</td>
-        </tr>`;
+
+    const tbody = document.getElementById("list");
+
+    // 🔹 Group by billNo
+    const grouped = {};
+    data.forEach(sale => {
+        if (!grouped[sale.billNo]) {
+            grouped[sale.billNo] = [];
+        }
+        grouped[sale.billNo].push(sale);
+    });
+
+    // 🔹 Build table with rowspan
+    Object.keys(grouped).forEach(billNo => {
+        const sales = grouped[billNo];
+        const rowSpan = sales.length;
+
+        sales.forEach((s, index) => {
+            let row = "<tr>";
+
+            // Show Bill No & Date only once
+            if (index === 0) {
+                row += `<td rowspan="${rowSpan}">${billNo}</td>`;
+            }
+
+            row += `
+                <td>${s.medicineName}</td>
+                <td>${s.batchNo}</td>
+                <td>${s.quantity}</td>
+                <td>₹${s.totalAmount}</td>
+            `;
+
+            if (index === 0) {
+                row += `<td rowspan="${rowSpan}">${s.saleDate}</td>`;
+            }
+
+            row += "</tr>";
+            tbody.innerHTML += row;
+        });
     });
 });
 </script>
+
 
 </body>
 </html>

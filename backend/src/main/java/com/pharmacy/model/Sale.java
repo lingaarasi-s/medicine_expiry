@@ -20,6 +20,9 @@ public class Sale {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(name = "bill_no", nullable = false)
+    private String billNo;
+
     @Column(name = "medicine_id", nullable = false)
     private int medicineId;
 
@@ -47,7 +50,7 @@ public class Sale {
         this.saleDate = LocalDate.now();
     }
 
-    // ===== GETTERS & SETTERS =====
+    // ================= GETTERS & SETTERS =================
 
     public int getId() {
         return id;
@@ -55,6 +58,14 @@ public class Sale {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getBillNo() {
+        return billNo;
+    }
+
+    public void setBillNo(String billNo) {
+        this.billNo = billNo;
     }
 
     public int getMedicineId() {
