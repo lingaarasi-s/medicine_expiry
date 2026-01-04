@@ -67,8 +67,9 @@ public class MedicineController {
     // Manual entry
     @PostMapping("/manual")
     public Medicine manual(@RequestBody Medicine med) {
-        return repo.save(med);
+        return service.addOrUpdate(med);
     }
+
 
     // ✅ Scanner add
     @PostMapping("/add")

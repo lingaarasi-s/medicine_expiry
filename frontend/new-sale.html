@@ -81,8 +81,10 @@ function filterMedicines() {
     }
 
     const filtered = medicines.filter(m =>
-        m.name.toLowerCase().includes(value)
+        m.name.toLowerCase().includes(value) &&
+        new Date(m.expiryDate) >= new Date()
     );
+
 
     if (filtered.length === 0) {
         document.getElementById("medicineBox").style.display = "none";
@@ -141,25 +143,30 @@ function addToCart() {
    🧾 SUBMIT BILL
 ========================== */
 function submitBill() {
+    if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+    }
+
     fetch("http://localhost:8080/api/billing/sell", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cart)
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(t => { throw new Error(t); });
+        }
+        return res.json();
+    })
     .then(bill => {
-        document.getElementById("msg").innerHTML =
-            `✅ Bill ${bill.billNo} generated`;
-
-        cart = [];
-
-        // 🔁 AUTO REDIRECT TO SALES HISTORY
-        setTimeout(() => {
-            window.location.href = "sales.html";
-        }, 1000); // 1 second delay (optional)
+        alert("✅ Bill Generated: " + bill.billNo);
+        window.location.href = "sales.html";
+    })
+    .catch(err => {
+        alert("❌ " + err.message);
     });
 }
-
 
 </script>
 

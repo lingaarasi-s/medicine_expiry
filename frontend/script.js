@@ -66,5 +66,51 @@ function addScannedMed() {
     });
 }
 
+/* ---------- ADD MANUAL MEDICINE ---------- */
+function addManualMed() {
+
+    const med = {
+        name: document.getElementById("name").value,
+        batchNo: document.getElementById("batch").value,
+        barcode: document.getElementById("barcode").value,
+        expiryDate: document.getElementById("expiry").value,
+        manufacturer: document.getElementById("manufacturer").value,
+        category: document.getElementById("category").value,
+        quantity: parseInt(document.getElementById("quantity").value)
+    };
+
+    if (!med.name || !med.batchNo || !med.expiryDate || !med.quantity) {
+        alert("Please fill all required fields");
+        return;
+    }
+
+    fetch("http://localhost:8080/api/medicine/manual", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(med)
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(t => { throw new Error(t); });
+        }
+        return res.json();
+    })
+    .then(data => {
+        document.getElementById("message").innerHTML =
+            `<p style="color:green">✅ ${data.name} saved successfully</p>`;
+
+        // clear fields
+        document.querySelectorAll("#manualSection input")
+            .forEach(i => i.value = "");
+    })
+    .catch(err => {
+        document.getElementById("message").innerHTML =
+            `<p style="color:red">❌ ${err.message}</p>`;
+    });
+}
+
+
 
 

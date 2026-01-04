@@ -15,15 +15,29 @@ import com.pharmacy.model.Medicine;
 
 public interface MedicineRepository extends JpaRepository<Medicine, Integer> {
 
+    Optional<Medicine> findByBarcodeAndBatchNo(String barcode, String batchNo);
+
+    @Query("DELETE FROM Medicine m WHERE m.quantity <= 0")
+    @Modifying
+    @Transactional
+    void deleteZeroStock();
+
+    Optional<Medicine> 
+    findByNameAndBatchNoAndExpiryDate(
+        String name,
+        String batchNo,
+        LocalDate expiryDate
+    );
+
+
     @Query("""
 SELECT m FROM Medicine m
 WHERE m.expiryDate BETWEEN :today AND :futureDate
 """)
-List<Medicine> findExpireSoon(
-    @Param("today") LocalDate today,
-    @Param("futureDate") LocalDate futureDate
-);
-
+    List<Medicine> findExpireSoon(
+        @Param("today") LocalDate today,
+        @Param("futureDate") LocalDate futureDate
+    );
 
     // ✅ Already expired
     @Query(
@@ -36,10 +50,4 @@ List<Medicine> findExpireSoon(
     List<Medicine> findByQuantityLessThan(int qty);
 
     Optional<Medicine> findByBarcode(String barcode);
-
-    // ✅ Auto delete zero stock
-    @Transactional
-    @Modifying
-    @Query("DELETE FROM Medicine m WHERE m.quantity <= 0")
-    void deleteZeroStock();
 }

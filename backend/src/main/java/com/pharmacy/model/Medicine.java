@@ -9,11 +9,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
-@Table(name = "medicine")
+@Table(
+  name = "medicine",
+  uniqueConstraints = {
+    @UniqueConstraint(
+      columnNames = {"name", "batch_no", "expiry_date"}
+    )
+  }
+)
+
 public class Medicine {
 
     @Id

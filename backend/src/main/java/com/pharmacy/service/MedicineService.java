@@ -17,21 +17,59 @@ public class MedicineService {
     @Autowired
     private MasterMedicineRepository masterRepo;
 
+    /* =============================
+       MANUAL ENTRY (NO DUPLICATES)
+    ============================== */
+    public Medicine addOrUpdate(Medicine med) {
+
+        return medicineRepo
+            .findByNameAndBatchNoAndExpiryDate(
+                med.getName(),
+                med.getBatchNo(),
+                med.getExpiryDate()
+            )
+            .map(existing -> {
+                // ✅ already exists → update quantity
+                existing.setQuantity(
+                    existing.getQuantity() + med.getQuantity()
+                );
+                return medicineRepo.save(existing);
+            })
+            .orElseGet(() -> {
+                // ✅ new medicine → insert
+                return medicineRepo.save(med);
+            });
+    }
+
+    /* =============================
+       BARCODE ENTRY (NO DUPLICATES)
+    ============================== */
     public Medicine addByBarcode(String barcode, int quantity) {
 
         MasterMedicine master = masterRepo.findByBarcode(barcode)
             .orElseThrow(() ->
                 new RuntimeException("Barcode not found in master medicine"));
 
-        Medicine med = new Medicine();
-        med.setName(master.getName());
-        med.setBarcode(master.getBarcode());
-        med.setBatchNo(master.getBatchNo());
-        med.setManufacturer(master.getManufacturer());
-        med.setCategory(master.getCategory());
-        med.setExpiryDate(master.getExpiryDate());
-        med.setQuantity(quantity);
-
-        return medicineRepo.save(med);
+        return medicineRepo
+            .findByNameAndBatchNoAndExpiryDate(
+                master.getName(),
+                master.getBatchNo(),
+                master.getExpiryDate()
+            )
+            .map(existing -> {
+                existing.setQuantity(existing.getQuantity() + quantity);
+                return medicineRepo.save(existing);
+            })
+            .orElseGet(() -> {
+                Medicine med = new Medicine();
+                med.setName(master.getName());
+                med.setBarcode(master.getBarcode());
+                med.setBatchNo(master.getBatchNo());
+                med.setManufacturer(master.getManufacturer());
+                med.setCategory(master.getCategory());
+                med.setExpiryDate(master.getExpiryDate());
+                med.setQuantity(quantity);
+                return medicineRepo.save(med);
+            });
     }
 }
