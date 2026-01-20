@@ -22,6 +22,7 @@ public class MasterMedicine {
     private String manufacturer;
     private String category;
     private String returnPolicy;
+    private double sellingPrice;
 
     // Getters & Setters
     public int getId() { return id; }
@@ -47,4 +48,7 @@ public class MasterMedicine {
 
     public String getReturnPolicy() { return returnPolicy; }
     public void setReturnPolicy(String returnPolicy) { this.returnPolicy = returnPolicy; }
+
+    public double getSellingPrice() { return sellingPrice; }
+    public void setSellingPrice(double sellingPrice) { this.sellingPrice = sellingPrice; }
 }

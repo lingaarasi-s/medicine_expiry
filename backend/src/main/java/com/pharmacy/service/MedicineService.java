@@ -63,11 +63,11 @@ public class MedicineService {
             .orElseGet(() -> {
                 Medicine med = new Medicine();
                 med.setName(master.getName());
-                med.setBarcode(master.getBarcode());
                 med.setBatchNo(master.getBatchNo());
                 med.setManufacturer(master.getManufacturer());
                 med.setCategory(master.getCategory());
                 med.setExpiryDate(master.getExpiryDate());
+                med.setSellingPrice(master.getSellingPrice());
                 med.setQuantity(quantity);
                 return medicineRepo.save(med);
             });

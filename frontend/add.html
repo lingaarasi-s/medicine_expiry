@@ -36,12 +36,12 @@ button { background:#28a745; color:white; border:none; cursor:pointer; }
 
     <input id="name" placeholder="Medicine Name" required>
     <input id="batch" placeholder="Batch No" required>
-    <input id="barcode" placeholder="Barcode (optional)">
     <input id="expiry" type="date" required>
     <input id="manufacturer" placeholder="Manufacturer" required>
     <input id="category" placeholder="Category (Tablet / Syrup)" required>
     <input id="returnPolicy" placeholder="Return Policy (optional)">
     <input id="quantity" type="number" placeholder="Quantity" required>
+    <input id="sellingPrice" type="number" step="0.01" placeholder="Selling Price" required>
 
     <button onclick="addManualMed()">Save Medicine</button>
 </div>

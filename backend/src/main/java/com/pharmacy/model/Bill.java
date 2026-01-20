@@ -26,6 +26,9 @@ public class Bill {
 
     private double totalAmount;
 
+    private int customerId;
+    private String customerName;
+
     @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL)
     private List<SaleItem> items;
 
@@ -66,6 +69,22 @@ public class Bill {
 
     public void setTotalAmount(double totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(int customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     public List<SaleItem> getItems() {

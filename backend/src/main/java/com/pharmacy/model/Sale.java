@@ -41,6 +41,9 @@ public class Sale {
     @Column(name = "total_amount", nullable = false)
     private double totalAmount;
 
+    @Column(name = "customer_id", nullable = false)
+    private int customerId;
+
     @Column(name = "sale_date")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate saleDate;
@@ -114,6 +117,14 @@ public class Sale {
 
     public void setTotalAmount(double totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(int customerId) {
+        this.customerId = customerId;
     }
 
     public LocalDate getSaleDate() {

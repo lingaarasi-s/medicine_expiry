@@ -17,6 +17,7 @@
 <table border="1">
 <tr>
     <th>Bill No</th>
+    <th>Customer ID</th>
     <th>Medicine</th>
     <th>Batch</th>
     <th>Qty</th>
@@ -59,9 +60,10 @@ fetch("http://localhost:8080/api/billing/history")
         sales.forEach((s, index) => {
             let row = "<tr>";
 
-            // Show Bill No & Date only once
+            // Show Bill No, Customer ID & Date only once
             if (index === 0) {
                 row += `<td rowspan="${rowSpan}">${billNo}</td>`;
+                row += `<td rowspan="${rowSpan}">${s.customerId}</td>`;
             }
 
             row += `

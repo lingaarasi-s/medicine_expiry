@@ -15,8 +15,6 @@ import com.pharmacy.model.Medicine;
 
 public interface MedicineRepository extends JpaRepository<Medicine, Integer> {
 
-    Optional<Medicine> findByBarcodeAndBatchNo(String barcode, String batchNo);
-
     @Query("DELETE FROM Medicine m WHERE m.quantity <= 0")
     @Modifying
     @Transactional
@@ -28,6 +26,7 @@ public interface MedicineRepository extends JpaRepository<Medicine, Integer> {
         String batchNo,
         LocalDate expiryDate
     );
+
 
 
     @Query("""
@@ -49,5 +48,4 @@ WHERE m.expiryDate BETWEEN :today AND :futureDate
     // ✅ Low stock (<100)
     List<Medicine> findByQuantityLessThan(int qty);
 
-    Optional<Medicine> findByBarcode(String barcode);
 }

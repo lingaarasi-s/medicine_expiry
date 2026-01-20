@@ -72,14 +72,15 @@ function addManualMed() {
     const med = {
         name: document.getElementById("name").value,
         batchNo: document.getElementById("batch").value,
-        barcode: document.getElementById("barcode").value,
         expiryDate: document.getElementById("expiry").value,
         manufacturer: document.getElementById("manufacturer").value,
         category: document.getElementById("category").value,
+        returnPolicy: document.getElementById("returnPolicy").value,
+        sellingPrice: parseFloat(document.getElementById("sellingPrice").value),
         quantity: parseInt(document.getElementById("quantity").value)
     };
 
-    if (!med.name || !med.batchNo || !med.expiryDate || !med.quantity) {
+    if (!med.name || !med.batchNo || !med.expiryDate || !med.quantity || !med.sellingPrice) {
         alert("Please fill all required fields");
         return;
     }

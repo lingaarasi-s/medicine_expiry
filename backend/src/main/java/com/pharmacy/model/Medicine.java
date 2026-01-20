@@ -35,8 +35,6 @@ public class Medicine {
     @Column(name = "batch_no", nullable = false)
     private String batchNo;
 
-    private String barcode;
-
     @Column(name = "expiry_date", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate expiryDate;
@@ -52,6 +50,9 @@ public class Medicine {
 
     @Column(nullable = false)
     private int quantity;
+
+    @Column(nullable = false)
+    private double sellingPrice;
 
     @Column(name = "added_date")
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -72,9 +73,6 @@ public class Medicine {
     public String getBatchNo() { return batchNo; }
     public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
 
-    public String getBarcode() { return barcode; }
-    public void setBarcode(String barcode) { this.barcode = barcode; }
-
     public LocalDate getExpiryDate() { return expiryDate; }
     public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
 
@@ -89,6 +87,9 @@ public class Medicine {
 
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public double getSellingPrice() { return sellingPrice; }
+    public void setSellingPrice(double sellingPrice) { this.sellingPrice = sellingPrice; }
 
     public LocalDate getAddedDate() { return addedDate; }
 

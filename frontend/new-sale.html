@@ -10,6 +10,10 @@
 
 <h2>🧾 New Sale Bill</h2>
 
+<!-- Customer Details -->
+<input type="text" id="customerName" placeholder="Customer Name"><br><br>
+<input type="text" id="customerPhone" placeholder="Customer Phone"><br><br>
+
 <!-- 🔍 Search -->
 <input type="text" id="search" placeholder="Medicine name"
        oninput="medicineSelected=false; filterMedicines()">
@@ -23,7 +27,7 @@
 
 <!-- 📦 Quantity & Price -->
 <input type="number" id="qty" placeholder="Quantity"><br><br>
-<input type="number" id="price" placeholder="Price per unit"><br><br>
+<div id="priceDisplay"></div><br>
 
 <!-- 🛒 CART BUTTONS -->
 <button onclick="addToCart()">➕ Add Item</button>
@@ -49,6 +53,7 @@
 let medicines = [];
 let medicineSelected = false;
 let cart = [];
+let selectedMedicine = null;
 
 fetch("http://localhost:8080/api/medicine/all")
 .then(res => res.json())
@@ -97,10 +102,13 @@ function filterMedicines() {
 
 function setSearchFromSelection() {
     const sel = document.getElementById("medicine");
+    const id = sel.value;
+    selectedMedicine = medicines.find(m => m.id == id);
     const text = sel.options[sel.selectedIndex].text;
     const name = text.split("|")[0].trim();
 
     document.getElementById("search").value = name;
+    document.getElementById("priceDisplay").innerText = `Price: ₹${selectedMedicine.sellingPrice}`;
     document.getElementById("medicineBox").style.display = "none";
 }
 
@@ -111,15 +119,16 @@ function addToCart() {
     const id = document.getElementById("medicine").value;
     const name = document.getElementById("search").value;
     const qty = parseInt(document.getElementById("qty").value);
-    const price = parseFloat(document.getElementById("price").value);
 
-    if (!id || qty <= 0 || price <= 0) {
-        alert("Select medicine, quantity & price");
+    if (!selectedMedicine || qty <= 0) {
+        alert("Select medicine and enter quantity");
         return;
     }
 
+    const price = selectedMedicine.sellingPrice;
+
     cart.push({
-        medicineId: id,
+        medicineId: parseInt(id),
         quantity: qty,
         price: price
     });
@@ -136,7 +145,8 @@ function addToCart() {
     document.getElementById("medicine").value = "";
     document.getElementById("search").value = "";
     document.getElementById("qty").value = "";
-    document.getElementById("price").value = "";
+    selectedMedicine = null;
+    document.getElementById("priceDisplay").innerText = "Price: Select a medicine";
 }
 
 /* ==========================
@@ -148,10 +158,24 @@ function submitBill() {
         return;
     }
 
+    const customerName = document.getElementById("customerName").value;
+    const customerPhone = document.getElementById("customerPhone").value;
+
+    if (!customerName || !customerPhone) {
+        alert("Enter customer details");
+        return;
+    }
+
+    const request = {
+        customerName: customerName,
+        customerPhone: customerPhone,
+        items: cart
+    };
+
     fetch("http://localhost:8080/api/billing/sell", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cart)
+        body: JSON.stringify(request)
     })
     .then(res => {
         if (!res.ok) {
