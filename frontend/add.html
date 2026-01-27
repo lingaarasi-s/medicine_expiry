@@ -13,10 +13,19 @@ video { width:100%; height:100%; object-fit:cover; }
 input, button { padding:10px; margin:5px 0; width:300px; }
 button { background:#28a745; color:white; border:none; cursor:pointer; }
 .hidden { display:none; }
+.message { margin:10px 0; padding:10px; border-radius:4px; }
+.success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+.error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+.user-info { position: absolute; top: 20px; right: 20px; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.logout-btn { background: #dc3545 !important; margin-left: 10px; }
 </style>
 </head>
 
 <body>
+
+<div class="user-info" id="userInfo">
+    <!-- User info will be populated by JavaScript -->
+</div>
 
 <h2>Add Medicine</h2>
 
@@ -49,8 +58,201 @@ button { background:#28a745; color:white; border:none; cursor:pointer; }
 <div id="message"></div>
 
 <br>
-<a href="index.html">Back</a>
+<a href="index.html">← Back to Dashboard</a>
 
-<script src="script.js"></script>
+<script>
+let scanner;
+let scannedCode = "";
+let currentUser = null;
+
+// Check authentication on page load
+window.onload = function() {
+    const token = localStorage.getItem('jwtToken');
+    const user = localStorage.getItem('user');
+
+    if (!token || !user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        currentUser = JSON.parse(user);
+        const roles = currentUser.roles || [];
+
+        if (!roles.includes('ROLE_ADMIN') && !roles.includes('ROLE_PHARMACIST')) {
+            alert('Access denied. Pharmacist or Admin privileges required.');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        displayUserInfo();
+    } catch (e) {
+        localStorage.removeItem('jwtToken');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+};
+
+function displayUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    const roles = currentUser.roles || [];
+
+    let roleBadges = '';
+    roles.forEach(role => {
+        const roleName = role.replace('ROLE_', '');
+        roleBadges += `<span style="background:#17a2b8;color:white;padding:2px 8px;border-radius:12px;font-size:12px;margin-left:5px;">${roleName}</span>`;
+    });
+
+    userInfo.innerHTML = `
+        <strong>${currentUser.fullName}</strong>${roleBadges}
+        <button onclick="logout()" class="logout-btn">Logout</button>
+    `;
+}
+
+function logout() {
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+
+// Add authorization header to fetch requests
+function authorizedFetch(url, options = {}) {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+        window.location.href = 'login.html';
+        return Promise.reject('No token found');
+    }
+
+    const defaultOptions = {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+
+    return fetch(url, { ...options, ...defaultOptions })
+        .then(response => {
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+                throw new Error('Authentication failed');
+            }
+            return response;
+        });
+}
+
+function showScan() {
+    document.getElementById("scanSection").classList.remove("hidden");
+    document.getElementById("manualSection").classList.add("hidden");
+    startCamera();
+}
+
+function showManual() {
+    stopCamera();
+    document.getElementById("manualSection").classList.remove("hidden");
+    document.getElementById("scanSection").classList.add("hidden");
+}
+
+/* ---------- CAMERA ---------- */
+function startCamera() {
+    document.getElementById("reader").style.display = "block";
+    scanner = new ZXing.BrowserMultiFormatReader();
+
+    const video = document.createElement("video");
+    document.getElementById("reader").innerHTML = "";
+    document.getElementById("reader").appendChild(video);
+
+    scanner.decodeFromVideoDevice(null, video, (result, err) => {
+        if (result) {
+            scannedCode = result.text;
+            document.getElementById("message").innerHTML =
+                `<p style="color:green">Scanned: ${scannedCode}</p>`;
+            stopCamera();
+        }
+    });
+}
+
+function stopCamera() {
+    if (scanner) scanner.reset();
+}
+
+/* ---------- ADD SCANNED MED ---------- */
+function addScannedMed() {
+    const qty = document.getElementById("scanQty").value;
+
+    if (!scannedCode || qty <= 0) {
+        showMessage("Scan barcode and enter quantity", "error");
+        return;
+    }
+
+    authorizedFetch(`http://localhost:8080/api/medicine/add?barcode=${scannedCode}&quantity=${qty}`, {
+        method: "POST"
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(t => { throw new Error(t); });
+        }
+        return res.json();
+    })
+    .then(data => {
+        showMessage(`✅ ${data.name} added successfully`, "success");
+        document.getElementById("scanQty").value = "";
+        scannedCode = "";
+    })
+    .catch(err => {
+        showMessage(`❌ ${err.message}`, "error");
+    });
+}
+
+/* ---------- ADD MANUAL MEDICINE ---------- */
+function addManualMed() {
+
+    const med = {
+        name: document.getElementById("name").value,
+        batchNo: document.getElementById("batch").value,
+        expiryDate: document.getElementById("expiry").value,
+        manufacturer: document.getElementById("manufacturer").value,
+        category: document.getElementById("category").value,
+        returnPolicy: document.getElementById("returnPolicy").value,
+        sellingPrice: parseFloat(document.getElementById("sellingPrice").value),
+        quantity: parseInt(document.getElementById("quantity").value)
+    };
+
+    if (!med.name || !med.batchNo || !med.expiryDate || !med.quantity || !med.sellingPrice) {
+        showMessage("Please fill all required fields", "error");
+        return;
+    }
+
+    authorizedFetch("http://localhost:8080/api/medicine/manual", {
+        method: "POST",
+        body: JSON.stringify(med)
+    })
+    .then(res => {
+        if (!res.ok) {
+            return res.text().then(t => { throw new Error(t); });
+        }
+        return res.json();
+    })
+    .then(data => {
+        showMessage(`✅ ${data.name} saved successfully`, "success");
+
+        // clear fields
+        document.querySelectorAll("#manualSection input")
+            .forEach(i => i.value = "");
+    })
+    .catch(err => {
+        showMessage(`❌ ${err.message}`, "error");
+    });
+}
+
+function showMessage(message, type) {
+    document.getElementById("message").innerHTML = `<div class="message ${type}">${message}</div>`;
+}
+
+</script>
+
+
 </body>
 </html>

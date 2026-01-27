@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .filters h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .filter-group input[type="datetime-local"] {
+            width: 200px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .audit-table th,
+        .audit-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .audit-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .audit-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .action-login { background-color: #d4edda; color: #155724; }
+        .action-logout { background-color: #f8d7da; color: #721c24; }
+        .action-add { background-color: #d1ecf1; color: #0c5460; }
+        .action-delete { background-color: #f8d7da; color: #721c24; }
+        .action-update { background-color: #fff3cd; color: #856404; }
+        .action-other { background-color: #e2e3e5; color: #383d41; }
+
+        .timestamp {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .details-cell {
+            max-width: 300px;
+            word-wrap: break-word;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .user-info {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="user-info">
+        <div id="userDisplay">Loading...</div>
+        <div>
+            <button onclick="window.location.href='index.html'" class="btn btn-secondary">← Back to Dashboard</button>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+    </div>
+
+    <h1>📋 Audit Logs</h1>
+
+    <div class="filters">
+        <h3>Filters</h3>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="usernameFilter">Username:</label>
+                <input type="text" id="usernameFilter" placeholder="Filter by username">
+            </div>
+
+            <div class="filter-group">
+                <label for="actionFilter">Action:</label>
+                <select id="actionFilter">
+                    <option value="">All Actions</option>
+                    <option value="LOGIN">Login</option>
+                    <option value="LOGOUT">Logout</option>
+                    <option value="ADD_MEDICINE">Add Medicine</option>
+                    <option value="DELETE_MEDICINE">Delete Medicine</option>
+                    <option value="CREATE_BILL">Create Bill</option>
+                    <option value="USER_REGISTRATION">User Registration</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="startDate">Start Date:</label>
+                <input type="datetime-local" id="startDate">
+            </div>
+
+            <div class="filter-group">
+                <label for="endDate">End Date:</label>
+                <input type="datetime-local" id="endDate">
+            </div>
+
+            <div class="filter-group">
+                <button onclick="applyFilters()" class="btn btn-primary">Apply Filters</button>
+                <button onclick="clearFilters()" class="btn btn-secondary">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="errorMessage"></div>
+
+    <table class="audit-table" id="auditTable">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Username</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Entity Type</th>
+                <th>Entity ID</th>
+                <th>IP Address</th>
+            </tr>
+        </thead>
+        <tbody id="auditTableBody">
+            <tr>
+                <td colspan="7" class="loading">Loading audit logs...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        let allAuditLogs = [];
+        let currentUser = null;
+
+        // Check authentication and load data
+        window.onload = function() {
+            const token = localStorage.getItem('jwtToken');
+            const user = localStorage.getItem('user');
+
+            if (!token || !user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                currentUser = JSON.parse(user);
+                const roles = currentUser.roles || [];
+
+                if (!roles.includes('ROLE_ADMIN')) {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                document.getElementById('userDisplay').innerHTML =
+                    `<strong>${currentUser.fullName}</strong> <span style="background:#17a2b8;color:white;padding:2px 8px;border-radius:12px;font-size:12px;">ADMIN</span>`;
+
+                loadAuditLogs();
+            } catch (e) {
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        };
+
+        function logout() {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        function authorizedFetch(url, options = {}) {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                window.location.href = 'login.html';
+                return Promise.reject('No token found');
+            }
+
+            const defaultOptions = {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            };
+
+            return fetch(url, { ...options, ...defaultOptions })
+                .then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        localStorage.removeItem('jwtToken');
+                        localStorage.removeItem('user');
+                        window.location.href = 'login.html';
+                        throw new Error('Authentication failed');
+                    }
+                    return response;
+                });
+        }
+
+        function loadAuditLogs() {
+            authorizedFetch('http://localhost:8080/api/audit/logs')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load audit logs');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    allAuditLogs = data;
+                    renderAuditLogs(data);
+                })
+                .catch(error => {
+                    console.error('Error loading audit logs:', error);
+                    document.getElementById('auditTableBody').innerHTML =
+                        `<tr><td colspan="7" class="error">Error loading audit logs: ${error.message}</td></tr>`;
+                });
+        }
+
+        function renderAuditLogs(logs) {
+            const tbody = document.getElementById('auditTableBody');
+
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="no-data">No audit logs found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logs.map(log => {
+                const timestamp = new Date(log.timestamp).toLocaleString();
+                const actionClass = getActionClass(log.action);
+
+                return `
+                    <tr>
+                        <td class="timestamp">${timestamp}</td>
+                        <td>${log.username}</td>
+                        <td><span class="action-badge ${actionClass}">${log.action.replace('_', ' ')}</span></td>
+                        <td class="details-cell">${log.details || '-'}</td>
+                        <td>${log.entityType || '-'}</td>
+                        <td>${log.entityId || '-'}</td>
+                        <td>${log.ipAddress || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getActionClass(action) {
+            if (action.includes('LOGIN')) return 'action-login';
+            if (action.includes('LOGOUT')) return 'action-logout';
+            if (action.includes('ADD')) return 'action-add';
+            if (action.includes('DELETE')) return 'action-delete';
+            if (action.includes('UPDATE')) return 'action-update';
+            return 'action-other';
+        }
+
+        function applyFilters() {
+            const username = document.getElementById('usernameFilter').value.toLowerCase();
+            const action = document.getElementById('actionFilter').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            let filtered = allAuditLogs;
+
+            if (username) {
+                filtered = filtered.filter(log => log.username.toLowerCase().includes(username));
+            }
+
+            if (action) {
+                filtered = filtered.filter(log => log.action === action);
+            }
+
+            if (startDate) {
+                const start = new Date(startDate);
+                filtered = filtered.filter(log => new Date(log.timestamp) >= start);
+            }
+
+            if (endDate) {
+                const end = new Date(endDate);
+                filtered = filtered.filter(log => new Date(log.timestamp) <= end);
+            }
+
+            renderAuditLogs(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('usernameFilter').value = '';
+            document.getElementById('actionFilter').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            renderAuditLogs(allAuditLogs);
+        }
+    </script>
+</body>
+</html>

@@ -172,9 +172,21 @@ function submitBill() {
         items: cart
     };
 
+    // 🔑 GET JWT TOKEN
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        alert("Please login again");
+        window.location.href = "login.html";
+        return;
+    }
+
     fetch("http://localhost:8080/api/billing/sell", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token   // 🔥 THIS IS THE FIX
+        },
         body: JSON.stringify(request)
     })
     .then(res => {

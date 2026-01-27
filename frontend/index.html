@@ -9,9 +9,16 @@
         th { background:#007bff; color:white; }
         input { padding:8px; width:300px; margin-bottom:10px; }
         a { padding:8px 15px; background:#28a745; color:white; text-decoration:none; border-radius:4px; }
+        .user-info { position: absolute; top: 20px; right: 20px; background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .logout-btn { background: #dc3545 !important; margin-left: 10px; }
+        .role-badge { display: inline-block; padding: 2px 8px; background: #17a2b8; color: white; border-radius: 12px; font-size: 12px; margin-left: 10px; }
     </style>
 </head>
 <body>
+
+<div class="user-info" id="userInfo">
+    <!-- User info will be populated by JavaScript -->
+</div>
 
 <h2>Medicine Expiry Management System</h2>
 
@@ -21,17 +28,18 @@
 <a href="remove.html" style="background:#dc3535">❌ Medicines to Remove</a>
 <a href="new-sale.html" style="background:#17a2b8">🧾 Billing</a>
 <a href="sales.html" style="background:#6f42c1">📊 Sales History</a>
+<a href="audit.html" id="auditLink" style="background:#20c997;display:none">📋 Audit Logs</a>
 
 <br><br>
 
-<input type="text" id="search" placeholder="Search by Barcode or Batch No" onkeyup="searchMedicine()">
+<input type="text" id="search" placeholder="Search by name or Batch No" onkeyup="searchMedicine()">
 
 <table>
     <thead>
         <tr>
             <th>Name</th>
             <th>Batch No</th>
-            <th>Barcode</th>
+        
             <th>Expiry Date</th>
             <th>Quantity</th>
             <th>Manufacturer</th>
@@ -42,25 +50,113 @@
 
 <script>
 let medicines = [];
+let currentUser = null;
+
+// Check authentication on page load
+window.onload = function() {
+    const token = localStorage.getItem('jwtToken');
+    const user = localStorage.getItem('user');
+
+    if (!token || !user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        currentUser = JSON.parse(user);
+        displayUserInfo();
+        loadAll();
+    } catch (e) {
+        localStorage.removeItem('jwtToken');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
+    }
+};
+
+function displayUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    const roles = currentUser.roles || [];
+
+    let roleBadges = '';
+    roles.forEach(role => {
+        const roleName = role.replace('ROLE_', '');
+        roleBadges += `<span class="role-badge">${roleName}</span>`;
+    });
+
+    userInfo.innerHTML = `
+        <strong>Welcome, ${currentUser.fullName}</strong>${roleBadges}
+        <button onclick="logout()" class="logout-btn">Logout</button>
+    `;
+
+    // Show audit link for admin users
+    if (roles.includes('ROLE_ADMIN')) {
+        document.getElementById('auditLink').style.display = 'inline-block';
+    }
+}
+
+function logout() {
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+
+// Add authorization header to fetch requests
+function authorizedFetch(url, options = {}) {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) {
+        window.location.href = 'login.html';
+        return Promise.reject('No token found');
+    }
+
+    const defaultOptions = {
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    };
+
+    return fetch(url, { ...options, ...defaultOptions })
+        .then(response => {
+            if (response.status === 401 || response.status === 403) {
+                // Token expired or invalid
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+                throw new Error('Authentication failed');
+            }
+            return response;
+        });
+}
 
 // Load all medicines initially
-loadAll();
-
 function loadAll() {
-    fetch("http://localhost:8080/api/medicine/all")
+    authorizedFetch("http://localhost:8080/api/medicine/all")
         .then(res => res.json())
         .then(data => {
             medicines = data;
             renderTable(data);
+        })
+        .catch(error => {
+            console.error('Error loading medicines:', error);
+            if (error.message !== 'Authentication failed') {
+                alert('Error loading medicines. Please try again.');
+            }
         });
 }
 
 // Load low stock medicines
 function loadLowStock() {
-    fetch("http://localhost:8080/api/medicine/low-stock")
+    authorizedFetch("http://localhost:8080/api/medicine/low-stock")
         .then(res => res.json())
         .then(data => {
             renderTable(data);
+        })
+        .catch(error => {
+            console.error('Error loading low stock:', error);
+            if (error.message !== 'Authentication failed') {
+                alert('Error loading low stock medicines. Please try again.');
+            }
         });
 }
 
@@ -84,7 +180,7 @@ function renderTable(data) {
             <tr ${m.quantity < 100 ? 'style="background:#fff3cd"' : ''}>
                 <td>${m.name}</td>
                 <td>${m.batchNo}</td>
-                <td>${m.barcode}</td>
+                
                 <td>${m.expiryDate}</td>
                 <td><b>${m.quantity}</b></td>
                 <td>${m.manufacturer}</td>
