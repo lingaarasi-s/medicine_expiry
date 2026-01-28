@@ -28,8 +28,22 @@
 <a href="index.html">⬅ Back</a>
 
 <script>
-fetch("http://localhost:8080/api/medicine/expired")
-.then(res => res.json())
+const token = localStorage.getItem("jwtToken");
+
+if (!token) {
+    alert("Please login again");
+    window.location.href = "login.html";
+}
+
+fetch("http://localhost:8080/api/medicine/expired", {
+    headers: {
+        "Authorization": "Bearer " + token
+    }
+})
+.then(res => {
+    if (!res.ok) throw new Error("Unauthorized");
+    return res.json();
+})
 .then(data => {
     const list = document.getElementById("list");
     list.innerHTML = "";
@@ -49,13 +63,19 @@ fetch("http://localhost:8080/api/medicine/expired")
             </div>
         `;
     });
+})
+.catch(err => {
+    alert("❌ " + err.message);
 });
 
 function deleteMed(id) {
     if (!confirm("Delete this medicine?")) return;
 
     fetch(`http://localhost:8080/api/medicine/delete/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+            "Authorization": "Bearer " + token
+        }
     })
     .then(() => location.reload());
 }

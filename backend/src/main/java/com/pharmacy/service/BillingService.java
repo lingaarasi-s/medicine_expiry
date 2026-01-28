@@ -11,10 +11,11 @@ import com.pharmacy.model.Bill;
 import com.pharmacy.model.Customer;
 import com.pharmacy.model.Medicine;
 import com.pharmacy.model.Sale;
+import com.pharmacy.model.SaleItem;
 import com.pharmacy.repository.BillRepository;
 import com.pharmacy.repository.CustomerRepository;
 import com.pharmacy.repository.MedicineRepository;
-import com.pharmacy.repository.SaleRepository;
+import com.pharmacy.repository.SaleItemRepository;
 
 @Service
 public class BillingService {
@@ -26,7 +27,7 @@ public class BillingService {
     private MedicineRepository medicineRepo;
 
     @Autowired
-    private SaleRepository saleRepo;
+    private SaleItemRepository saleRepo;
 
     @Autowired
     private CustomerRepository customerRepo;
@@ -52,31 +53,33 @@ public class BillingService {
 
         for (SaleRequest req : request.getItems()) {
 
-            Medicine med = medicineRepo.findById(req.getMedicineId())
-                    .orElseThrow(() -> new RuntimeException("Medicine not found"));
+          Medicine med = medicineRepo.findById(req.getMedicineId())
+            .orElseThrow(() -> new RuntimeException("Medicine not found"));
 
-            // 🔽 reduce stock
-            med.setQuantity(med.getQuantity() - req.getQuantity());
-            medicineRepo.save(med);
-
-            // Use selling price from medicine
-            double price = med.getSellingPrice();
-            double itemTotal = price * req.getQuantity();
-            total += itemTotal;
-
-            // 🔥 SAVE INTO SALES TABLE
-            Sale sale = new Sale();
-            sale.setBillNo(bill.getBillNo());
-            sale.setMedicineId(med.getId());
-            sale.setMedicineName(med.getName());
-            sale.setBatchNo(med.getBatchNo());
-            sale.setQuantity(req.getQuantity());
-            sale.setPricePerUnit(price);
-            sale.setTotalAmount(itemTotal);
-            sale.setCustomerId(customer.getId());
-
-            saleRepo.save(sale);
+        if (med.getQuantity() < req.getQuantity()) {
+            throw new RuntimeException("Insufficient stock for " + med.getName());
         }
+
+    // reduce stock
+        med.setQuantity(med.getQuantity() - req.getQuantity());
+        medicineRepo.save(med);
+
+        double price = med.getSellingPrice();
+        double itemTotal = price * req.getQuantity();
+        total += itemTotal;
+
+    // ✅ SAVE INTO sale_item
+    SaleItem item = new SaleItem();
+    item.setBill(bill);
+    item.setMedicineName(med.getName());
+    item.setBatchNo(med.getBatchNo());
+    item.setQuantity(req.getQuantity());
+    item.setPricePerUnit(price);
+    item.setTotalAmount(itemTotal);
+
+    saleRepo.save(item);
+}
+
 
         bill.setTotalAmount(total);
         billRepo.save(bill);
@@ -84,7 +87,7 @@ public class BillingService {
         return bill;
     }
 
-    public List<Sale> getSalesHistory() {
+    public List<SaleItem> getSalesHistory() {
         return saleRepo.findAll();
     }
 }

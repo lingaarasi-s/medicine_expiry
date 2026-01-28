@@ -67,6 +67,8 @@ let currentUser = null;
 
 // Check authentication on page load
 window.onload = function() {
+    console.log("RAW USER FROM STORAGE:", localStorage.getItem("user"));
+
     const token = localStorage.getItem('jwtToken');
     const user = localStorage.getItem('user');
 

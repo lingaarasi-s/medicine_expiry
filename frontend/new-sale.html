@@ -167,16 +167,15 @@ function submitBill() {
     }
 
     const request = {
-        customerName: customerName,
-        customerPhone: customerPhone,
+        customerName,
+        customerPhone,
         items: cart
     };
 
-    // 🔑 GET JWT TOKEN
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("jwtToken"); // ✅ FIX
 
     if (!token) {
-        alert("Please login again");
+        alert("Session expired. Please login again.");
         window.location.href = "login.html";
         return;
     }
@@ -185,7 +184,7 @@ function submitBill() {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": "Bearer " + token   // 🔥 THIS IS THE FIX
+            "Authorization": "Bearer " + token
         },
         body: JSON.stringify(request)
     })
@@ -203,6 +202,7 @@ function submitBill() {
         alert("❌ " + err.message);
     });
 }
+
 
 </script>
 

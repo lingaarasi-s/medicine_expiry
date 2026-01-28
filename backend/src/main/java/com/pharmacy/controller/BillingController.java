@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pharmacy.dto.BillRequest;
 import com.pharmacy.model.Bill;
-import com.pharmacy.model.Sale;
+import com.pharmacy.model.SaleItem;
 import com.pharmacy.repository.BillRepository;
 import com.pharmacy.service.AuditService;
 import com.pharmacy.service.BillingService;
@@ -62,9 +62,9 @@ public class BillingController {
     // ✅ SALES HISTORY
     @GetMapping("/history")
     @PreAuthorize("hasRole('ADMIN') or hasRole('PHARMACIST')")
-    public List<Sale> history() {
+    public List<SaleItem> history() {
         return billingService.getSalesHistory();
-    }
+   }
 
     // ✅ BILL LIST
     @GetMapping("/bills")

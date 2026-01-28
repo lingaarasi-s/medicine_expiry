@@ -28,7 +28,6 @@
 </table>
 
 <script>
-
 function goDashboard() {
     window.location.href = "index.html";
 }
@@ -37,33 +36,48 @@ function newSale() {
     window.location.href = "new-sale.html";
 }
 
-fetch("http://localhost:8080/api/billing/history")
-.then(res => res.json())
+const token = localStorage.getItem("jwtToken");
+
+if (!token) {
+    alert("Please login again");
+    window.location.href = "login.html";
+}
+
+fetch("http://localhost:8080/api/billing/history", {
+    headers: {
+        "Authorization": "Bearer " + token
+    }
+})
+.then(res => {
+    if (!res.ok) throw new Error("Unauthorized");
+    return res.json();
+})
 .then(data => {
 
     const tbody = document.getElementById("list");
+    tbody.innerHTML = "";
 
-    // 🔹 Group by billNo
+    // ✅ GROUP BY BILL NO
     const grouped = {};
-    data.forEach(sale => {
-        if (!grouped[sale.billNo]) {
-            grouped[sale.billNo] = [];
+    data.forEach(item => {
+        const billNo = item.bill.billNo;
+        if (!grouped[billNo]) {
+            grouped[billNo] = [];
         }
-        grouped[sale.billNo].push(sale);
+        grouped[billNo].push(item);
     });
 
-    // 🔹 Build table with rowspan
+    // ✅ RENDER WITH ROWSPAN
     Object.keys(grouped).forEach(billNo => {
-        const sales = grouped[billNo];
-        const rowSpan = sales.length;
+        const items = grouped[billNo];
+        const rowSpan = items.length;
 
-        sales.forEach((s, index) => {
+        items.forEach((s, index) => {
             let row = "<tr>";
 
-            // Show Bill No, Customer ID & Date only once
             if (index === 0) {
-                row += `<td rowspan="${rowSpan}">${billNo}</td>`;
-                row += `<td rowspan="${rowSpan}">${s.customerId}</td>`;
+                row += `<td rowspan="${rowSpan}">${s.bill.billNo}</td>`;
+                row += `<td rowspan="${rowSpan}">${s.bill.customerId}</td>`;
             }
 
             row += `
@@ -74,15 +88,19 @@ fetch("http://localhost:8080/api/billing/history")
             `;
 
             if (index === 0) {
-                row += `<td rowspan="${rowSpan}">${s.saleDate}</td>`;
+                row += `<td rowspan="${rowSpan}">${s.bill.saleDate}</td>`;
             }
 
             row += "</tr>";
             tbody.innerHTML += row;
         });
     });
+})
+.catch(err => {
+    alert("❌ " + err.message);
 });
 </script>
+
 
 
 </body>
