@@ -10,7 +10,6 @@ import com.pharmacy.dto.SaleRequest;
 import com.pharmacy.model.Bill;
 import com.pharmacy.model.Customer;
 import com.pharmacy.model.Medicine;
-import com.pharmacy.model.Sale;
 import com.pharmacy.model.SaleItem;
 import com.pharmacy.repository.BillRepository;
 import com.pharmacy.repository.CustomerRepository;
